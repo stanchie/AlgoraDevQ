@@ -3,6 +3,7 @@ import os
 from werkzeug.security import generate_password_hash
 from .app import create_app
 from .db import get_db
+from .question_bank import QUESTION_BANK
 
 app = create_app()
 
@@ -33,23 +34,12 @@ with app.app_context():
     ).fetchall()
 
     # Starter content. Topics missing here simply have no lessons/questions yet (to be filled from the lesson PDFs).
-    # Each quiz serves up to 20 questions per topic, so each topic needs 20+ questions for a full quiz.
+    # Each quiz serves 20 random questions from the topic's bank, so every topic needs 20+ questions.
     lesson_content = {
         'Arrays': [('What is an array?', 'An array stores values in order.'), ('Indexing', 'An index identifies a position in an array.')],
         'Searching and Sorting': [('Linear search', 'Linear search checks items one at a time.'), ('Binary search', 'Binary search halves a sorted search range.')],
     }
-    question_content = {
-        'Arrays': [
-            ('Where is the first array element?', ['Index 0', 'Index 1', 'The last index'], 0, 'Most arrays use zero-based indexing.'),
-            ('What does an index identify?', ['A position', 'A color', 'A file'], 0, 'An index identifies a position.'),
-            ('Which operation visits each value?', ['Traversal', 'Sorting', 'Painting'], 0, 'Traversal visits values in sequence.'),
-        ],
-        'Searching and Sorting': [
-            ('What does linear search do?', ['Checks items in sequence', 'Halves the list', 'Reverses values'], 0, 'Linear search checks items one at a time.'),
-            ('Binary search needs what input?', ['Sorted data', 'A stack', 'A graph'], 0, 'Binary search works on sorted data.'),
-            ('Which search halves its range?', ['Binary search', 'Linear search', 'Depth-first search'], 0, 'Binary search repeatedly halves the range.'),
-        ],
-    }
+    question_content = QUESTION_BANK  # 30 questions per topic, see question_bank.py
     for topic in topic_rows:
         title = topic['title']
         for order_no, (lesson_title, content) in enumerate(lesson_content.get(title, []), start=1):
