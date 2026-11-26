@@ -35,6 +35,16 @@ CREATE TABLE IF NOT EXISTS questions (
   explanation TEXT NOT NULL
 );
 
+-- Quizzes: which questions a student has already earned points for. A question pays out once per
+-- student, so replaying a quiz cannot be used to farm points. Rows are removed automatically
+-- when the student or the question is deleted.
+CREATE TABLE IF NOT EXISTS quiz_awards (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, question_id)
+);
+
 -- Canteen: rewards students can buy with points.
 CREATE TABLE IF NOT EXISTS items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,13 +59,4 @@ CREATE TABLE IF NOT EXISTS purchases (
   item_id INTEGER NOT NULL REFERENCES items(id),
   cost INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Point Cap - This is to limit Points giving to quizzes to once per playthrough, and only if they get the right answer.
-
-CREATE TABLE IF NOT EXISTS quiz_awards (
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, question_id)
 );
