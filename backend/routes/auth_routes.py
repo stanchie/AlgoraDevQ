@@ -1,54 +1,22 @@
-import hmac
-import os
+import re
 import sqlite3
 from flask import Blueprint, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from ..auth import error, login_required
+from ..auth import admin_required, error, login_required
 from ..db import get_db
 
 bp = Blueprint('auth', __name__)
 
 
 def public_user(row):
-    return {'id': row['id'], 'username': row['username'], 'role': row['role'], 'points': row['points'], 'avatarColor': row['avatar_color']}
-
-
-@bp.post('/api/admin/register-first')
-def register_first_admin():
-    """One-time admin bootstrap protected by a server-side setup key."""
-    setup_key = os.environ.get('ADMIN_SETUP_KEY')
-    if not setup_key:
-        return error('First-admin registration is not configured on this server', 503)
-
-    data = request.get_json(silent=True) or {}
-    supplied_key = data.get('setupKey')
-    username = data.get('username')
-    password = data.get('password')
-    if not isinstance(supplied_key, str) or not hmac.compare_digest(supplied_key, setup_key):
-        return error('Invalid setup key', 403)
-    if not isinstance(username, str) or not 3 <= len(username.strip()) <= 32:
-        return error('Username must be 3 to 32 characters', 400)
-    username = username.strip()
-    if not isinstance(password, str) or len(password) < 12:
-        return error('Admin password must be at least 12 characters', 400)
-
-    db = get_db()
-    if db.execute("SELECT 1 FROM users WHERE role = 'admin' LIMIT 1").fetchone():
-        return error('An admin account already exists; first-admin registration is closed', 409)
-    try:
-        cursor = db.execute(
-            'INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)',
-            (username, generate_password_hash(password), 'admin'),
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
-        db.rollback()
-        return error('That username is already taken', 409)
-
-    user = db.execute('SELECT * FROM users WHERE id = ?', (cursor.lastrowid,)).fetchone()
-    session.clear()
-    session['user_id'] = user['id']
-    return jsonify(success=True, data=public_user(user)), 201
+    return {
+        'id': row['id'],
+        'username': row['username'],
+        'role': row['role'],
+        'points': row['points'],
+        'avatarColor': row['avatar_color'],
+        'mustChangePassword': bool(row['must_change_password']),
+    }
 
 
 @bp.post('/api/login')
@@ -70,6 +38,39 @@ def login():
     session.clear()
     session['user_id'] = user['id']
     return jsonify(success=True, data=public_user(user))
+
+
+@bp.put('/api/admin/account')
+@admin_required
+def update_admin_account():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get('currentPassword')
+    username = data.get('username')
+    new_password = data.get('newPassword')
+    if not isinstance(current_password, str) or not current_password:
+        return error('Current password is required', 400)
+    if not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_]{3,32}', username.strip()):
+        return error('Username must be 3–32 letters, numbers, or underscores', 400)
+    username = username.strip()
+    if not isinstance(new_password, str) or len(new_password) < 12:
+        return error('Password must be at least 12 characters', 400)
+
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE id=? AND role='admin'", (session['user_id'],)).fetchone()
+    if user is None or not check_password_hash(user['password_hash'], current_password):
+        return error('Current password is incorrect', 401)
+    try:
+        db.execute(
+            'UPDATE users SET username=?, password_hash=?, must_change_password=0 WHERE id=?',
+            (username, generate_password_hash(new_password), user['id']),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        db.rollback()
+        return error('That username is already taken', 409)
+
+    updated = db.execute('SELECT * FROM users WHERE id=?', (user['id'],)).fetchone()
+    return jsonify(success=True, data=public_user(updated))
 
 
 @bp.post('/api/logout')

@@ -33,8 +33,8 @@ export async function request<T>(method: string, path: string, body?: unknown): 
 export const login = (username: string, password: string): Promise<User> => request('POST', '/api/login', { username, password });
 export const logout = (): Promise<{ message: string }> => request('POST', '/api/logout');
 export const getMe = (): Promise<User> => request('GET', '/api/me');
-export const registerFirstAdmin = (username: string, password: string, setupKey: string): Promise<User> =>
-  request('POST', '/api/admin/register-first', { username, password, setupKey });
+export const changeAdminAccount = (currentPassword: string, username: string, newPassword: string): Promise<User> =>
+  request('PUT', '/api/admin/account', { currentPassword, username, newPassword });
 export const getTopics = (): Promise<Topic[]> => request('GET', '/api/topics');
 export const getLessons = (topicId: number): Promise<Lesson[]> => request('GET', `/api/topics/${topicId}/lessons`);
 export const getQuestions = (topicId: number): Promise<QuizQuestion[]> => request('GET', `/api/topics/${topicId}/questions`);

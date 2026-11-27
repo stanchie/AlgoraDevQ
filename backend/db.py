@@ -21,6 +21,13 @@ def init_db() -> None:
     db = get_db()
     schema = Path(__file__).with_name('schema.sql').read_text(encoding='utf-8')
     db.executescript(schema)
+
+    # Migrate databases created before forced first-login admin credential changes.
+    columns = {row['name'] for row in db.execute('PRAGMA table_info(users)').fetchall()}
+    if 'must_change_password' not in columns:
+        db.execute('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0')
+        # Existing admins predate the change flow; require each to replace their credentials once.
+        db.execute("UPDATE users SET must_change_password=1 WHERE role='admin'")
     db.commit()
 
 

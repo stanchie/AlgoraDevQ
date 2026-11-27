@@ -1,5 +1,5 @@
 export type Role = 'student' | 'admin';
-export type User = { id: number; username: string; role: Role; points: number; avatarColor: string };
+export type User = { id: number; username: string; role: Role; points: number; avatarColor: string; mustChangePassword: boolean };
 export type Topic = { id: number; title: string; ownerId: number | null; isPublic: boolean };
 export type Lesson = { id: number; topicId: number; title: string; content: string; orderNo: number };
 export type QuizQuestion = { id: number; topicId: number; text: string; options: string[] };
@@ -8,6 +8,6 @@ export type AdminQuestion = Question & { answerIndex: number };
 export type Item = { id: number; name: string; cost: number };
 export type SubmitRequest = { topicId?: number; mixed?: boolean; answers: Array<{ questionId: number; answerIndex: number }> };
 export type QuestionResult = { questionId: number; correct: boolean; pointsAwarded: number; correctIndex: number; explanation: string };
-export type SubmitResponse = { pointsEarned: number; totalPoints: number; pointsEnabled: boolean; correctCount: number; totalQuestions: number; results: QuestionResult[] };
+export type SubmitResponse = { pointsEarned: number; totalPoints: number; pointsEnabled: boolean; correctCount: number; totalQuestions: number; pointsEnabled: boolean };
 export type BuyResponse = { success: boolean; message: string; totalPoints: number };
 export type ApiEnvelope<T> = { success: boolean; data?: T; message?: string };

@@ -11,17 +11,16 @@ TOPIC_TITLES = ['Arrays', 'Trees', 'Searching and Sorting', 'Linked Lists', 'Sta
 
 with app.app_context():
     db = get_db()
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'admin-dev-password')
     db.execute(
-        'INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)',
-        ('admin', generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'admin-dev-password')), 'admin'),
+        'INSERT OR IGNORE INTO users (username, password_hash, role, must_change_password) VALUES (?, ?, ?, 1)',
+        ('admin', generate_password_hash(admin_password), 'admin'),
     )
 
-    # An earlier version of this seed called the topic 'Searching'. Rename it instead of creating a second one.
     db.execute(
         "UPDATE topics SET title = 'Searching and Sorting' WHERE title = 'Searching' AND owner_id IS NULL "
         "AND NOT EXISTS (SELECT 1 FROM topics WHERE title = 'Searching and Sorting')"
     )
-    # topics.title is not UNIQUE, so check for an existing row ourselves (INSERT OR IGNORE would duplicate).
     for title in TOPIC_TITLES:
         db.execute(
             'INSERT INTO topics (title, owner_id, is_public) SELECT ?, NULL, 1 '
@@ -33,13 +32,11 @@ with app.app_context():
         f'SELECT id, title FROM topics WHERE owner_id IS NULL AND title IN ({placeholders})', TOPIC_TITLES
     ).fetchall()
 
-    # Starter content. Topics missing here simply have no lessons/questions yet (to be filled from the lesson PDFs).
-    # Each quiz serves 20 random questions from the topic's bank, so every topic needs 20+ questions.
     lesson_content = {
         'Arrays': [('What is an array?', 'An array stores values in order.'), ('Indexing', 'An index identifies a position in an array.')],
         'Searching and Sorting': [('Linear search', 'Linear search checks items one at a time.'), ('Binary search', 'Binary search halves a sorted search range.')],
     }
-    question_content = QUESTION_BANK  # 30 questions per topic, see question_bank.py
+    question_content = QUESTION_BANK
     for topic in topic_rows:
         title = topic['title']
         for order_no, (lesson_title, content) in enumerate(lesson_content.get(title, []), start=1):

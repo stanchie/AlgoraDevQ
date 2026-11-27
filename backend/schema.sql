@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'student',
   points INTEGER NOT NULL DEFAULT 100,
-  avatar_color TEXT NOT NULL DEFAULT '#3b6fd4'
+  avatar_color TEXT NOT NULL DEFAULT '#3b6fd4',
+  must_change_password INTEGER NOT NULL DEFAULT 0
 );
 
 -- Bookshelf: learning topics shown to students, with optional ownership for private topics.
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS questions (
 -- student, so replaying a quiz cannot be used to farm points. Rows are removed automatically
 -- when the student or the question is deleted.
 CREATE TABLE IF NOT EXISTS quiz_awards (
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
   question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, question_id)
