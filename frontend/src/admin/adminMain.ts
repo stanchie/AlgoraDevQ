@@ -1,4 +1,5 @@
 import '../style.css';
-import { renderLessonsAdmin } from './lessonsAdmin';
-const root = document.querySelector<HTMLDivElement>('#admin-app');
-if (root) renderLessonsAdmin(root);
+import { mountQuizAdmin } from './quizAdmin';
+
+const root = document.querySelector<HTMLElement>('#admin-app');
+if (root) mountQuizAdmin(root);
