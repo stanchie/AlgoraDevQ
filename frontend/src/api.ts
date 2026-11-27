@@ -26,7 +26,6 @@ export async function request<T>(method: string, path: string, body?: unknown): 
     throw new ApiError(typeof payload.message === 'string' ? payload.message : `Request failed (${response.status})`, response.status);
   }
   if ('data' in payload) return payload.data as T;
-  // Compatibility with endpoints that return named fields alongside success.
   const { success: _success, ...data } = payload;
   return data as T;
 }
@@ -34,6 +33,8 @@ export async function request<T>(method: string, path: string, body?: unknown): 
 export const login = (username: string, password: string): Promise<User> => request('POST', '/api/login', { username, password });
 export const logout = (): Promise<{ message: string }> => request('POST', '/api/logout');
 export const getMe = (): Promise<User> => request('GET', '/api/me');
+export const registerFirstAdmin = (username: string, password: string, setupKey: string): Promise<User> =>
+  request('POST', '/api/admin/register-first', { username, password, setupKey });
 export const getTopics = (): Promise<Topic[]> => request('GET', '/api/topics');
 export const getLessons = (topicId: number): Promise<Lesson[]> => request('GET', `/api/topics/${topicId}/lessons`);
 export const getQuestions = (topicId: number): Promise<QuizQuestion[]> => request('GET', `/api/topics/${topicId}/questions`);
